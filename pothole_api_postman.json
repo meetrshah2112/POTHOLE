@@ -1,0 +1,268 @@
+{
+  "info": {
+    "name": "Smart Pothole Reporting API",
+    "_postman_id": "pothole-api-collection-v1",
+    "description": "Full API collection for the Smart Pothole Reporting & Management System",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url",    "value": "http://localhost:5000" },
+    { "key": "user_token",  "value": "" },
+    { "key": "admin_token", "value": "" },
+    { "key": "pothole_id",  "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/health", "host": ["{{base_url}}"], "path": ["health"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{base_url}}/api/auth/register" },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Alice User\",\n  \"email\": \"alice@example.com\",\n  \"password\": \"password123\",\n  \"role\": \"user\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Register Admin",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{base_url}}/api/auth/register" },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Bob Admin\",\n  \"email\": \"admin@example.com\",\n  \"password\": \"admin123\",\n  \"role\": \"admin\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data.access_token) {",
+                  "  pm.collectionVariables.set('user_token', res.data.access_token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{base_url}}/api/auth/login" },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"alice@example.com\",\n  \"password\": \"password123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data.access_token) {",
+                  "  pm.collectionVariables.set('admin_token', res.data.access_token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{base_url}}/api/auth/login" },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"admin123\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Potholes (User)",
+      "item": [
+        {
+          "name": "Report Pothole",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data && res.data.id) {",
+                  "  pm.collectionVariables.set('pothole_id', res.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{base_url}}/api/potholes/" },
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{user_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Large pothole near school\",\n  \"latitude\": 19.076090,\n  \"longitude\": 72.877426,\n  \"photo_url\": \"https://example.com/photo.jpg\",\n  \"comment\": \"Dangerous for two-wheelers\",\n  \"priority\": 4\n}"
+            }
+          }
+        },
+        {
+          "name": "Get All Potholes",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/potholes/?page=1&limit=10",
+              "query": [
+                { "key": "page",     "value": "1" },
+                { "key": "limit",    "value": "10" },
+                { "key": "status",   "value": "pending",    "disabled": true },
+                { "key": "priority", "value": "4",          "disabled": true }
+              ]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{user_token}}" }]
+          }
+        },
+        {
+          "name": "Get Pothole by ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/potholes/{{pothole_id}}" },
+            "header": [{ "key": "Authorization", "value": "Bearer {{user_token}}" }]
+          }
+        },
+        {
+          "name": "Get My Potholes",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/potholes/my?page=1&limit=10" },
+            "header": [{ "key": "Authorization", "value": "Bearer {{user_token}}" }]
+          }
+        },
+        {
+          "name": "Get Nearby Potholes",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/potholes/nearby?latitude=19.076090&longitude=72.877426&radius_km=5",
+              "query": [
+                { "key": "latitude",  "value": "19.076090" },
+                { "key": "longitude", "value": "72.877426" },
+                { "key": "radius_km", "value": "5" }
+              ]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{user_token}}" }]
+          }
+        },
+        {
+          "name": "Update My Pothole",
+          "request": {
+            "method": "PUT",
+            "url": { "raw": "{{base_url}}/api/potholes/{{pothole_id}}" },
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{user_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comment\": \"Updated: Fixed temporarily with gravel\",\n  \"priority\": 3\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete My Pothole",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{base_url}}/api/potholes/{{pothole_id}}" },
+            "header": [{ "key": "Authorization", "value": "Bearer {{user_token}}" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Admin: Get All Potholes",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/admin/potholes?page=1&limit=10",
+              "query": [
+                { "key": "page",  "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "status", "value": "pending", "disabled": true }
+              ]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }]
+          }
+        },
+        {
+          "name": "Admin: Update Status",
+          "request": {
+            "method": "PATCH",
+            "url": { "raw": "{{base_url}}/api/admin/potholes/{{pothole_id}}/status" },
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"inprogress\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Admin: Update Priority",
+          "request": {
+            "method": "PATCH",
+            "url": { "raw": "{{base_url}}/api/admin/potholes/{{pothole_id}}/priority" },
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"priority\": 5\n}"
+            }
+          }
+        },
+        {
+          "name": "Admin: Delete Pothole",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{base_url}}/api/admin/potholes/{{pothole_id}}" },
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }]
+          }
+        }
+      ]
+    }
+  ]
+}

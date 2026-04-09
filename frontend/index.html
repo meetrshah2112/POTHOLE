@@ -1,0 +1,2142 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PotholeWatch — Citizen Reporting Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      :root {
+        --bg: #0d0f14;
+        --surface: #13161d;
+        --surface2: #1a1e28;
+        --border: #252938;
+        --accent: #f5c242;
+        --accent2: #e8533a;
+        --accent3: #5b9cf6;
+        --text: #e8eaf0;
+        --text-dim: #7a7f96;
+        --text-muted: #454a60;
+        --success: #4ade80;
+        --warning: #fb923c;
+        --danger: #f87171;
+        --pending: #f5c242;
+        --inprogress: #5b9cf6;
+        --completed: #4ade80;
+        --font-head: "Syne", sans-serif;
+        --font-body: "DM Sans", sans-serif;
+        --font-mono: "DM Mono", monospace;
+        --radius: 10px;
+        --radius-lg: 16px;
+        --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font-body);
+        font-size: 14px;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      /* ── NOISE TEXTURE ── */
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+        pointer-events: none;
+        z-index: 0;
+        opacity: 0.4;
+      }
+
+      /* ── LAYOUT ── */
+      .app {
+        display: flex;
+        min-height: 100vh;
+        position: relative;
+        z-index: 1;
+      }
+
+      /* ── SIDEBAR ── */
+      .sidebar {
+        width: 240px;
+        flex-shrink: 0;
+        background: var(--surface);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        padding: 24px 0;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
+      }
+
+      .logo {
+        padding: 0 20px 28px;
+        border-bottom: 1px solid var(--border);
+      }
+      .logo-mark {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .logo-icon {
+        width: 36px;
+        height: 36px;
+        background: var(--accent);
+        border-radius: 8px;
+        display: grid;
+        place-items: center;
+        font-size: 18px;
+      }
+      .logo-text {
+        font-family: var(--font-head);
+        font-weight: 800;
+        font-size: 15px;
+        letter-spacing: -0.3px;
+        line-height: 1.1;
+      }
+      .logo-text span {
+        color: var(--accent);
+      }
+      .logo-sub {
+        font-size: 10px;
+        color: var(--text-dim);
+        margin-top: 2px;
+        font-family: var(--font-mono);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .nav {
+        padding: 16px 12px;
+        flex: 1;
+      }
+      .nav-section {
+        margin-bottom: 24px;
+      }
+      .nav-label {
+        font-size: 10px;
+        font-family: var(--font-mono);
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        padding: 0 8px;
+        margin-bottom: 6px;
+      }
+
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 10px;
+        border-radius: var(--radius);
+        cursor: pointer;
+        color: var(--text-dim);
+        font-size: 13.5px;
+        font-weight: 500;
+        transition: all 0.18s;
+        border: 1px solid transparent;
+        user-select: none;
+      }
+      .nav-item:hover {
+        background: var(--surface2);
+        color: var(--text);
+      }
+      .nav-item.active {
+        background: rgba(245, 194, 66, 0.08);
+        color: var(--accent);
+        border-color: rgba(245, 194, 66, 0.15);
+      }
+      .nav-item .icon {
+        font-size: 16px;
+        width: 20px;
+        text-align: center;
+      }
+      .nav-item .badge {
+        margin-left: auto;
+        background: var(--accent2);
+        color: #fff;
+        font-size: 10px;
+        font-family: var(--font-mono);
+        padding: 2px 6px;
+        border-radius: 99px;
+      }
+
+      .sidebar-footer {
+        padding: 16px 20px 0;
+        border-top: 1px solid var(--border);
+      }
+      .user-pill {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px;
+        background: var(--surface2);
+        border-radius: var(--radius);
+        cursor: pointer;
+      }
+      .user-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        display: grid;
+        place-items: center;
+        font-size: 13px;
+        font-weight: 700;
+        font-family: var(--font-head);
+        color: var(--bg);
+        flex-shrink: 0;
+      }
+      .user-name {
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .user-role {
+        font-size: 10px;
+        color: var(--text-dim);
+        font-family: var(--font-mono);
+      }
+      .logout-btn {
+        margin-left: auto;
+        font-size: 14px;
+        color: var(--text-muted);
+        cursor: pointer;
+        background: none;
+        border: none;
+        color: var(--text-dim);
+        transition: color 0.18s;
+        padding: 2px 4px;
+      }
+      .logout-btn:hover {
+        color: var(--danger);
+      }
+
+      /* ── MAIN CONTENT ── */
+      .main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .topbar {
+        padding: 20px 32px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        background: rgba(13, 15, 20, 0.7);
+        backdrop-filter: blur(8px);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+      .topbar-title {
+        font-family: var(--font-head);
+        font-size: 20px;
+        font-weight: 700;
+        flex: 1;
+      }
+      .topbar-actions {
+        display: flex;
+        gap: 8px;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        border-radius: var(--radius);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        transition: all 0.18s;
+        font-family: var(--font-body);
+        white-space: nowrap;
+      }
+      .btn-primary {
+        background: var(--accent);
+        color: var(--bg);
+      }
+      .btn-primary:hover {
+        background: #ffd166;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(245, 194, 66, 0.3);
+      }
+      .btn-ghost {
+        background: transparent;
+        color: var(--text-dim);
+        border: 1px solid var(--border);
+      }
+      .btn-ghost:hover {
+        background: var(--surface2);
+        color: var(--text);
+      }
+      .btn-danger {
+        background: rgba(248, 113, 113, 0.12);
+        color: var(--danger);
+        border: 1px solid rgba(248, 113, 113, 0.2);
+      }
+      .btn-danger:hover {
+        background: rgba(248, 113, 113, 0.2);
+      }
+      .btn-sm {
+        padding: 5px 10px;
+        font-size: 12px;
+      }
+      .btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        transform: none !important;
+      }
+
+      .content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 28px 32px;
+      }
+
+      /* ── AUTH SCREEN ── */
+      #auth-screen {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--bg);
+        position: relative;
+      }
+      #auth-screen::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(
+            ellipse 60% 40% at 30% 30%,
+            rgba(245, 194, 66, 0.06) 0%,
+            transparent 60%
+          ),
+          radial-gradient(
+            ellipse 40% 50% at 80% 70%,
+            rgba(91, 156, 246, 0.05) 0%,
+            transparent 60%
+          );
+      }
+
+      .auth-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        width: 420px;
+        padding: 40px;
+        position: relative;
+        z-index: 1;
+        box-shadow: var(--shadow);
+        animation: slideUp 0.4s ease;
+      }
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .auth-logo {
+        text-align: center;
+        margin-bottom: 32px;
+      }
+      .auth-logo .icon {
+        font-size: 40px;
+        margin-bottom: 10px;
+      }
+      .auth-logo h1 {
+        font-family: var(--font-head);
+        font-size: 26px;
+        font-weight: 800;
+      }
+      .auth-logo h1 span {
+        color: var(--accent);
+      }
+      .auth-logo p {
+        color: var(--text-dim);
+        font-size: 13px;
+        margin-top: 4px;
+      }
+
+      .auth-tabs {
+        display: flex;
+        border-radius: var(--radius);
+        background: var(--surface2);
+        margin-bottom: 24px;
+        padding: 4px;
+      }
+      .auth-tab {
+        flex: 1;
+        text-align: center;
+        padding: 8px;
+        border-radius: 7px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-dim);
+        transition: all 0.2s;
+      }
+      .auth-tab.active {
+        background: var(--surface);
+        color: var(--text);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+      }
+
+      .field {
+        margin-bottom: 16px;
+      }
+      .field label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-dim);
+        margin-bottom: 6px;
+        font-family: var(--font-mono);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .field input,
+      .field select,
+      .field textarea {
+        width: 100%;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 10px 14px;
+        color: var(--text);
+        font-size: 14px;
+        font-family: var(--font-body);
+        outline: none;
+        transition: border-color 0.18s;
+      }
+      .field input:focus,
+      .field select:focus,
+      .field textarea:focus {
+        border-color: var(--accent);
+      }
+      .field textarea {
+        resize: vertical;
+        min-height: 80px;
+      }
+      .field select option {
+        background: var(--surface2);
+      }
+
+      .auth-error {
+        background: rgba(248, 113, 113, 0.1);
+        border: 1px solid rgba(248, 113, 113, 0.2);
+        color: var(--danger);
+        padding: 10px 14px;
+        border-radius: var(--radius);
+        font-size: 13px;
+        margin-bottom: 16px;
+        display: none;
+      }
+
+      /* ── STATS CARDS ── */
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 28px;
+      }
+      .stat-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 20px;
+        position: relative;
+        overflow: hidden;
+        animation: fadeIn 0.4s ease both;
+      }
+      .stat-card::before {
+        content: "";
+        position: absolute;
+        top: -20px;
+        right: -20px;
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        opacity: 0.08;
+      }
+      .stat-card:nth-child(1)::before {
+        background: var(--accent);
+      }
+      .stat-card:nth-child(2)::before {
+        background: var(--accent3);
+      }
+      .stat-card:nth-child(3)::before {
+        background: var(--warning);
+      }
+      .stat-card:nth-child(4)::before {
+        background: var(--success);
+      }
+
+      .stat-label {
+        font-size: 11px;
+        font-family: var(--font-mono);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--text-dim);
+        margin-bottom: 8px;
+      }
+      .stat-value {
+        font-family: var(--font-head);
+        font-size: 32px;
+        font-weight: 800;
+        line-height: 1;
+      }
+      .stat-sub {
+        font-size: 12px;
+        color: var(--text-dim);
+        margin-top: 6px;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* ── POTHOLE TABLE ── */
+      .section-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+      .section-title {
+        font-family: var(--font-head);
+        font-size: 16px;
+        font-weight: 700;
+        flex: 1;
+      }
+
+      .filter-bar {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .filter-bar select,
+      .filter-bar input {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 7px 12px;
+        color: var(--text);
+        font-size: 13px;
+        font-family: var(--font-body);
+        outline: none;
+        transition: border-color 0.18s;
+        min-width: 140px;
+      }
+      .filter-bar select:focus,
+      .filter-bar input:focus {
+        border-color: var(--accent);
+      }
+      .filter-bar .spacer {
+        flex: 1;
+      }
+
+      .table-wrap {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      thead {
+        background: var(--surface2);
+        border-bottom: 1px solid var(--border);
+      }
+      th {
+        padding: 12px 16px;
+        text-align: left;
+        font-size: 11px;
+        font-family: var(--font-mono);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--text-dim);
+        font-weight: 500;
+      }
+      td {
+        padding: 13px 16px;
+        border-bottom: 1px solid rgba(37, 41, 56, 0.5);
+        font-size: 13px;
+        vertical-align: middle;
+      }
+      tr:last-child td {
+        border-bottom: none;
+      }
+      tr:hover td {
+        background: rgba(255, 255, 255, 0.018);
+      }
+      tr {
+        transition: background 0.15s;
+      }
+
+      .badge-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 10px;
+        border-radius: 99px;
+        font-size: 11px;
+        font-weight: 600;
+        font-family: var(--font-mono);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .badge-status.pending {
+        background: rgba(245, 194, 66, 0.12);
+        color: var(--pending);
+      }
+      .badge-status.inprogress {
+        background: rgba(91, 156, 246, 0.12);
+        color: var(--inprogress);
+      }
+      .badge-status.completed {
+        background: rgba(74, 222, 128, 0.12);
+        color: var(--completed);
+      }
+
+      .priority-dots {
+        display: flex;
+        gap: 3px;
+      }
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--border);
+      }
+      .dot.filled {
+        background: var(--accent2);
+      }
+      .dot.p4,
+      .dot.p5 {
+        background: var(--danger);
+      }
+      .dot.p3 {
+        background: var(--warning);
+      }
+      .dot.p1,
+      .dot.p2 {
+        background: var(--success);
+      }
+
+      .location-cell {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--text-dim);
+      }
+
+      .action-btns {
+        display: flex;
+        gap: 6px;
+      }
+
+      /* ── PAGINATION ── */
+      .pagination {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 16px;
+        border-top: 1px solid var(--border);
+      }
+      .pagination-info {
+        font-size: 12px;
+        color: var(--text-dim);
+        font-family: var(--font-mono);
+      }
+      .pagination-btns {
+        display: flex;
+        gap: 4px;
+      }
+      .page-btn {
+        width: 30px;
+        height: 30px;
+        border: 1px solid var(--border);
+        border-radius: 7px;
+        background: transparent;
+        color: var(--text-dim);
+        cursor: pointer;
+        font-size: 13px;
+        display: grid;
+        place-items: center;
+        transition: all 0.15s;
+        font-family: var(--font-mono);
+      }
+      .page-btn:hover {
+        background: var(--surface2);
+        color: var(--text);
+      }
+      .page-btn.active {
+        background: var(--accent);
+        color: var(--bg);
+        border-color: var(--accent);
+        font-weight: 700;
+      }
+      .page-btn:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+
+      /* ── MODAL ── */
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.65);
+        backdrop-filter: blur(4px);
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s;
+      }
+      .modal-overlay.open {
+        opacity: 1;
+        pointer-events: all;
+      }
+      .modal {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        width: 100%;
+        max-width: 500px;
+        max-height: 90vh;
+        overflow-y: auto;
+        transform: scale(0.95);
+        transition: transform 0.2s;
+        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+      }
+      .modal-overlay.open .modal {
+        transform: scale(1);
+      }
+      .modal-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border);
+      }
+      .modal-title {
+        font-family: var(--font-head);
+        font-size: 17px;
+        font-weight: 700;
+        flex: 1;
+      }
+      .modal-close {
+        background: none;
+        border: none;
+        color: var(--text-dim);
+        cursor: pointer;
+        font-size: 20px;
+        transition: color 0.15s;
+      }
+      .modal-close:hover {
+        color: var(--text);
+      }
+      .modal-body {
+        padding: 24px;
+      }
+      .modal-footer {
+        padding: 0 24px 20px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+
+      /* ── DETAIL CARD ── */
+      .detail-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin-bottom: 16px;
+      }
+      .detail-item .dl {
+        font-size: 11px;
+        font-family: var(--font-mono);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text-dim);
+        margin-bottom: 4px;
+      }
+      .detail-item .dv {
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      .photo-preview {
+        width: 100%;
+        border-radius: var(--radius);
+        object-fit: cover;
+        max-height: 200px;
+        border: 1px solid var(--border);
+        margin-bottom: 16px;
+      }
+
+      /* ── TOAST ── */
+      .toast-container {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 200;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .toast {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 16px;
+        border-radius: var(--radius);
+        font-size: 13px;
+        font-weight: 500;
+        box-shadow: var(--shadow);
+        animation: toastIn 0.3s ease;
+        max-width: 320px;
+        border: 1px solid transparent;
+      }
+      .toast.success {
+        background: rgba(74, 222, 128, 0.12);
+        border-color: rgba(74, 222, 128, 0.25);
+        color: var(--success);
+      }
+      .toast.error {
+        background: rgba(248, 113, 113, 0.12);
+        border-color: rgba(248, 113, 113, 0.25);
+        color: var(--danger);
+      }
+      .toast.info {
+        background: rgba(91, 156, 246, 0.12);
+        border-color: rgba(91, 156, 246, 0.25);
+        color: var(--accent3);
+      }
+      @keyframes toastIn {
+        from {
+          opacity: 0;
+          transform: translateX(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      /* ── EMPTY STATE ── */
+      .empty {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--text-muted);
+      }
+      .empty .emoji {
+        font-size: 48px;
+        margin-bottom: 12px;
+      }
+      .empty h3 {
+        font-family: var(--font-head);
+        font-size: 18px;
+        color: var(--text-dim);
+        margin-bottom: 6px;
+      }
+      .empty p {
+        font-size: 13px;
+      }
+
+      /* ── LOADING ── */
+      .loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 40px;
+        color: var(--text-dim);
+      }
+      .spinner {
+        width: 20px;
+        height: 20px;
+        border: 2px solid var(--border);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* ── ADMIN BADGE ── */
+      .admin-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: rgba(232, 83, 58, 0.12);
+        color: var(--accent2);
+        border: 1px solid rgba(232, 83, 58, 0.2);
+        padding: 3px 8px;
+        border-radius: 99px;
+        font-size: 10px;
+        font-family: var(--font-mono);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      /* ── SECTION VIEWS ── */
+      .view {
+        display: none;
+      }
+      .view.active {
+        display: block;
+      }
+
+      /* ── PRIORITY SELECT VISUAL ── */
+      .priority-select-wrap {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .priority-opt {
+        padding: 6px 14px;
+        border-radius: 99px;
+        font-size: 12px;
+        font-weight: 600;
+        font-family: var(--font-mono);
+        cursor: pointer;
+        border: 1.5px solid var(--border);
+        background: transparent;
+        color: var(--text-dim);
+        transition: all 0.15s;
+      }
+      .priority-opt:hover {
+        border-color: var(--accent);
+        color: var(--text);
+      }
+      .priority-opt.selected {
+        border-color: var(--accent);
+        background: rgba(245, 194, 66, 0.1);
+        color: var(--accent);
+      }
+      .priority-opt[data-p="4"].selected,
+      .priority-opt[data-p="5"].selected {
+        border-color: var(--danger);
+        background: rgba(248, 113, 113, 0.1);
+        color: var(--danger);
+      }
+      .priority-opt[data-p="1"].selected,
+      .priority-opt[data-p="2"].selected {
+        border-color: var(--success);
+        background: rgba(74, 222, 128, 0.1);
+        color: var(--success);
+      }
+
+      /* ── GLOW ── */
+      .accent-glow {
+        position: fixed;
+        bottom: -100px;
+        left: -100px;
+        width: 400px;
+        height: 400px;
+        background: radial-gradient(
+          circle,
+          rgba(245, 194, 66, 0.06) 0%,
+          transparent 70%
+        );
+        pointer-events: none;
+        z-index: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- AUTH SCREEN -->
+    <div id="auth-screen">
+      <div class="auth-card">
+        <div class="auth-logo">
+          <div class="icon">🚧</div>
+          <h1>Pothole<span>Watch</span></h1>
+          <p>Smart Pothole Reporting & Management</p>
+        </div>
+        <div class="auth-tabs">
+          <div class="auth-tab active" onclick="switchTab('login')">
+            Sign In
+          </div>
+          <div class="auth-tab" onclick="switchTab('register')">Register</div>
+        </div>
+        <div id="auth-error" class="auth-error"></div>
+
+        <!-- LOGIN -->
+        <div id="login-form">
+          <div class="field">
+            <label>Email</label
+            ><input
+              type="email"
+              id="login-email"
+              placeholder="you@example.com"
+            />
+          </div>
+          <div class="field">
+            <label>Password</label
+            ><input
+              type="password"
+              id="login-password"
+              placeholder="••••••••"
+            />
+          </div>
+          <button
+            class="btn btn-primary"
+            style="width: 100%; justify-content: center; margin-top: 8px"
+            onclick="doLogin()"
+          >
+            <span id="login-btn-text">Sign In →</span>
+          </button>
+          <p
+            style="
+              text-align: center;
+              margin-top: 16px;
+              font-size: 12px;
+              color: var(--text-dim);
+            "
+          >
+            Demo admin:
+            <code style="color: var(--accent)"
+              >admin@pothole.com / admin123</code
+            >
+          </p>
+        </div>
+
+        <!-- REGISTER -->
+        <div id="register-form" style="display: none">
+          <div class="field">
+            <label>Name</label
+            ><input type="text" id="reg-name" placeholder="Alice Smith" />
+          </div>
+          <div class="field">
+            <label>Email</label
+            ><input type="email" id="reg-email" placeholder="you@example.com" />
+          </div>
+          <div class="field">
+            <label>Password</label
+            ><input
+              type="password"
+              id="reg-password"
+              placeholder="Min 8 chars"
+            />
+          </div>
+          <div class="field">
+            <label>Role</label>
+            <select id="reg-role">
+              <option value="user">User (Citizen)</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <button
+            class="btn btn-primary"
+            style="width: 100%; justify-content: center; margin-top: 8px"
+            onclick="doRegister()"
+          >
+            Create Account →
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN APP (hidden until auth) -->
+    <div class="app" id="app-screen" style="display: none">
+      <div class="accent-glow"></div>
+
+      <!-- SIDEBAR -->
+      <aside class="sidebar">
+        <div class="logo">
+          <div class="logo-mark">
+            <div class="logo-icon">🚧</div>
+            <div>
+              <div class="logo-text">Pothole<span>Watch</span></div>
+              <div class="logo-sub">v1.0.0</div>
+            </div>
+          </div>
+        </div>
+        <nav class="nav">
+          <div class="nav-section">
+            <div class="nav-label">Overview</div>
+            <div class="nav-item active" onclick="showView('dashboard')">
+              <span class="icon">📊</span>Dashboard
+            </div>
+            <div class="nav-item" onclick="showView('all-potholes')">
+              <span class="icon">🕳️</span>All Reports
+            </div>
+            <div class="nav-item" onclick="showView('my-reports')">
+              <span class="icon">📍</span>My Reports
+            </div>
+            <div class="nav-item" onclick="showView('nearby')">
+              <span class="icon">📡</span>Nearby
+            </div>
+          </div>
+          <div class="nav-section" id="admin-nav" style="display: none">
+            <div class="nav-label">Admin</div>
+            <div class="nav-item" onclick="showView('admin-panel')">
+              <span class="icon">🛡️</span>Admin Panel
+            </div>
+          </div>
+        </nav>
+        <div class="sidebar-footer">
+          <div class="user-pill">
+            <div class="user-avatar" id="sidebar-avatar">U</div>
+            <div>
+              <div class="user-name" id="sidebar-name">User</div>
+              <div class="user-role" id="sidebar-role">user</div>
+            </div>
+            <button class="logout-btn" onclick="doLogout()" title="Sign out">
+              ⏏
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- MAIN -->
+      <main class="main">
+        <!-- DASHBOARD -->
+        <div id="view-dashboard" class="view active">
+          <div class="topbar">
+            <div class="topbar-title">Dashboard</div>
+            <div class="topbar-actions">
+              <button class="btn btn-primary" onclick="openReportModal()">
+                + Report Pothole
+              </button>
+            </div>
+          </div>
+          <div class="content">
+            <div class="stats-grid" id="stats-grid">
+              <div class="stat-card">
+                <div class="stat-label">Total Reports</div>
+                <div class="stat-value" id="stat-total">—</div>
+                <div class="stat-sub">All time</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Pending</div>
+                <div
+                  class="stat-value"
+                  id="stat-pending"
+                  style="color: var(--pending)"
+                >
+                  —
+                </div>
+                <div class="stat-sub">Awaiting action</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">In Progress</div>
+                <div
+                  class="stat-value"
+                  id="stat-progress"
+                  style="color: var(--inprogress)"
+                >
+                  —
+                </div>
+                <div class="stat-sub">Being fixed</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Completed</div>
+                <div
+                  class="stat-value"
+                  id="stat-done"
+                  style="color: var(--completed)"
+                >
+                  —
+                </div>
+                <div class="stat-sub">Fixed! 🎉</div>
+              </div>
+            </div>
+            <div class="section-header">
+              <div class="section-title">Recent Reports</div>
+            </div>
+            <div class="table-wrap" id="dashboard-table-wrap">
+              <div class="loading">
+                <div class="spinner"></div>
+                Loading...
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ALL POTHOLES -->
+        <div id="view-all-potholes" class="view">
+          <div class="topbar">
+            <div class="topbar-title">All Reports</div>
+            <div class="topbar-actions">
+              <button class="btn btn-primary" onclick="openReportModal()">
+                + Report Pothole
+              </button>
+            </div>
+          </div>
+          <div class="content">
+            <div class="filter-bar">
+              <select id="filter-status" onchange="loadAllPotholes()">
+                <option value="">All Statuses</option>
+                <option value="pending">Pending</option>
+                <option value="inprogress">In Progress</option>
+                <option value="completed">Completed</option>
+              </select>
+              <select id="filter-priority" onchange="loadAllPotholes()">
+                <option value="">All Priorities</option>
+                <option value="1">Priority 1</option>
+                <option value="2">Priority 2</option>
+                <option value="3">Priority 3</option>
+                <option value="4">Priority 4</option>
+                <option value="5">Priority 5 (Critical)</option>
+              </select>
+              <div class="spacer"></div>
+              <button class="btn btn-ghost btn-sm" onclick="loadAllPotholes()">
+                🔄 Refresh
+              </button>
+            </div>
+            <div class="table-wrap" id="all-table-wrap">
+              <div class="loading">
+                <div class="spinner"></div>
+                Loading...
+              </div>
+            </div>
+            <div id="all-pagination"></div>
+          </div>
+        </div>
+
+        <!-- MY REPORTS -->
+        <div id="view-my-reports" class="view">
+          <div class="topbar">
+            <div class="topbar-title">My Reports</div>
+            <div class="topbar-actions">
+              <button class="btn btn-primary" onclick="openReportModal()">
+                + Report Pothole
+              </button>
+            </div>
+          </div>
+          <div class="content">
+            <div class="table-wrap" id="my-table-wrap">
+              <div class="loading">
+                <div class="spinner"></div>
+                Loading...
+              </div>
+            </div>
+            <div id="my-pagination"></div>
+          </div>
+        </div>
+
+        <!-- NEARBY -->
+        <div id="view-nearby" class="view">
+          <div class="topbar">
+            <div class="topbar-title">Nearby Potholes</div>
+          </div>
+          <div class="content">
+            <div
+              style="
+                background: var(--surface);
+                border: 1px solid var(--border);
+                border-radius: var(--radius-lg);
+                padding: 20px;
+                margin-bottom: 20px;
+              "
+            >
+              <div
+                style="
+                  font-family: var(--font-head);
+                  font-weight: 700;
+                  margin-bottom: 16px;
+                "
+              >
+                Search by Location
+              </div>
+              <div
+                style="
+                  display: grid;
+                  grid-template-columns: 1fr 1fr 1fr auto;
+                  gap: 10px;
+                  align-items: end;
+                "
+              >
+                <div class="field" style="margin: 0">
+                  <label>Latitude</label
+                  ><input
+                    type="number"
+                    id="nb-lat"
+                    step="any"
+                    placeholder="e.g. 19.076"
+                  />
+                </div>
+                <div class="field" style="margin: 0">
+                  <label>Longitude</label
+                  ><input
+                    type="number"
+                    id="nb-lng"
+                    step="any"
+                    placeholder="e.g. 72.877"
+                  />
+                </div>
+                <div class="field" style="margin: 0">
+                  <label>Radius (km)</label
+                  ><input
+                    type="number"
+                    id="nb-radius"
+                    value="5"
+                    min="0.5"
+                    max="50"
+                    step="0.5"
+                  />
+                </div>
+                <button class="btn btn-primary" onclick="loadNearby()">
+                  Search 📡
+                </button>
+              </div>
+              <button
+                class="btn btn-ghost btn-sm"
+                style="margin-top: 10px"
+                onclick="useMyLocation()"
+              >
+                📍 Use My Location
+              </button>
+            </div>
+            <div class="table-wrap" id="nearby-table-wrap">
+              <div class="empty">
+                <div class="emoji">📡</div>
+                <h3>Set a location</h3>
+                <p>
+                  Enter coordinates or use your device location to find nearby
+                  potholes.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ADMIN PANEL -->
+        <div id="view-admin-panel" class="view">
+          <div class="topbar">
+            <div class="topbar-title">
+              Admin Panel <span class="admin-badge">🛡️ Admin</span>
+            </div>
+          </div>
+          <div class="content">
+            <div class="filter-bar">
+              <select id="admin-filter-status" onchange="loadAdminPotholes()">
+                <option value="">All Statuses</option>
+                <option value="pending">Pending</option>
+                <option value="inprogress">In Progress</option>
+                <option value="completed">Completed</option>
+              </select>
+              <select id="admin-filter-priority" onchange="loadAdminPotholes()">
+                <option value="">All Priorities</option>
+                <option value="1">Priority 1</option>
+                <option value="2">Priority 2</option>
+                <option value="3">Priority 3</option>
+                <option value="4">Priority 4</option>
+                <option value="5">Priority 5 (Critical)</option>
+              </select>
+              <div class="spacer"></div>
+              <button
+                class="btn btn-ghost btn-sm"
+                onclick="loadAdminPotholes()"
+              >
+                🔄 Refresh
+              </button>
+            </div>
+            <div class="table-wrap" id="admin-table-wrap">
+              <div class="loading">
+                <div class="spinner"></div>
+                Loading...
+              </div>
+            </div>
+            <div id="admin-pagination"></div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- ── MODALS ── -->
+
+    <!-- Report Pothole Modal -->
+    <div class="modal-overlay" id="report-modal">
+      <div class="modal">
+        <div class="modal-header">
+          <div class="modal-title">🕳️ Report a Pothole</div>
+          <button class="modal-close" onclick="closeModal('report-modal')">
+            ✕
+          </button>
+        </div>
+        <div class="modal-body">
+          <div id="report-error" class="auth-error"></div>
+          <div class="field">
+            <label>Name / Description *</label
+            ><input
+              type="text"
+              id="rp-name"
+              placeholder="e.g. Large pothole near school gate"
+            />
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px">
+            <div class="field">
+              <label>Latitude *</label
+              ><input
+                type="number"
+                id="rp-lat"
+                step="any"
+                placeholder="19.076090"
+              />
+            </div>
+            <div class="field">
+              <label>Longitude *</label
+              ><input
+                type="number"
+                id="rp-lng"
+                step="any"
+                placeholder="72.877426"
+              />
+            </div>
+          </div>
+          <div class="field">
+            <label>Priority *</label>
+            <div class="priority-select-wrap">
+              <div
+                class="priority-opt selected"
+                data-p="1"
+                onclick="selectPriority(1)"
+              >
+                1 Low
+              </div>
+              <div class="priority-opt" data-p="2" onclick="selectPriority(2)">
+                2
+              </div>
+              <div class="priority-opt" data-p="3" onclick="selectPriority(3)">
+                3 Medium
+              </div>
+              <div class="priority-opt" data-p="4" onclick="selectPriority(4)">
+                4
+              </div>
+              <div class="priority-opt" data-p="5" onclick="selectPriority(5)">
+                5 Critical
+              </div>
+            </div>
+          </div>
+          <div class="field">
+            <label>Photo URL (optional)</label
+            ><input
+              type="url"
+              id="rp-photo"
+              placeholder="https://example.com/photo.jpg"
+            />
+          </div>
+          <div class="field">
+            <label>Comment (optional)</label
+            ><textarea
+              id="rp-comment"
+              placeholder="Any additional details..."
+            ></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" onclick="closeModal('report-modal')">
+            Cancel
+          </button>
+          <button
+            class="btn btn-primary"
+            id="report-submit-btn"
+            onclick="submitReport()"
+          >
+            Submit Report
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detail Modal -->
+    <div class="modal-overlay" id="detail-modal">
+      <div class="modal">
+        <div class="modal-header">
+          <div class="modal-title">Pothole Details</div>
+          <button class="modal-close" onclick="closeModal('detail-modal')">
+            ✕
+          </button>
+        </div>
+        <div class="modal-body" id="detail-body">Loading...</div>
+        <div class="modal-footer" id="detail-footer"></div>
+      </div>
+    </div>
+
+    <!-- Admin Status Modal -->
+    <div class="modal-overlay" id="status-modal">
+      <div class="modal" style="max-width: 380px">
+        <div class="modal-header">
+          <div class="modal-title">Update Status</div>
+          <button class="modal-close" onclick="closeModal('status-modal')">
+            ✕
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="field">
+            <label>New Status</label>
+            <select id="new-status">
+              <option value="pending">Pending</option>
+              <option value="inprogress">In Progress</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" onclick="closeModal('status-modal')">
+            Cancel
+          </button>
+          <button class="btn btn-primary" onclick="submitStatusUpdate()">
+            Update
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Admin Priority Modal -->
+    <div class="modal-overlay" id="priority-modal">
+      <div class="modal" style="max-width: 380px">
+        <div class="modal-header">
+          <div class="modal-title">Update Priority</div>
+          <button class="modal-close" onclick="closeModal('priority-modal')">
+            ✕
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="field">
+            <label>New Priority</label>
+            <select id="new-priority">
+              <option value="1">1 — Low</option>
+              <option value="2">2</option>
+              <option value="3" selected>3 — Medium</option>
+              <option value="4">4</option>
+              <option value="5">5 — Critical</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" onclick="closeModal('priority-modal')">
+            Cancel
+          </button>
+          <button class="btn btn-primary" onclick="submitPriorityUpdate()">
+            Update
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <script>
+      // ─── CONFIG ───────────────────────────────────────────────────────────────────
+      const BASE_URL = "http://localhost:5000";
+
+      // ─── STATE ────────────────────────────────────────────────────────────────────
+      let token = localStorage.getItem("ph_token") || null;
+      let currentUser = JSON.parse(localStorage.getItem("ph_user") || "null");
+      let currentPriority = 1;
+      let activePotholeId = null;
+      let pages = { all: 1, my: 1, admin: 1 };
+
+      // ─── HELPERS ──────────────────────────────────────────────────────────────────
+      async function api(method, path, body, isForm = false) {
+        const opts = {
+          method,
+          headers: { ...(token ? { Authorization: "Bearer " + token } : {}) },
+        };
+        if (body && !isForm) {
+          opts.headers["Content-Type"] = "application/json";
+          opts.body = JSON.stringify(body);
+        } else if (body && isForm) {
+          opts.body = body;
+        }
+        const res = await fetch(BASE_URL + path, opts);
+        const data = await res.json().catch(() => ({}));
+        return { ok: res.ok, status: res.status, data };
+      }
+
+      function toast(msg, type = "info") {
+        const el = document.createElement("div");
+        el.className = `toast ${type}`;
+        const icons = { success: "✅", error: "❌", info: "ℹ️" };
+        el.innerHTML = `<span>${icons[type]}</span><span>${msg}</span>`;
+        document.getElementById("toast-container").appendChild(el);
+        setTimeout(() => el.remove(), 3500);
+      }
+
+      function closeModal(id) {
+        document.getElementById(id).classList.remove("open");
+      }
+      function openModal(id) {
+        document.getElementById(id).classList.add("open");
+      }
+
+      // ─── AUTH ─────────────────────────────────────────────────────────────────────
+      function switchTab(tab) {
+        document
+          .querySelectorAll(".auth-tab")
+          .forEach((t, i) =>
+            t.classList.toggle("active", (i === 0) === (tab === "login")),
+          );
+        document.getElementById("login-form").style.display =
+          tab === "login" ? "" : "none";
+        document.getElementById("register-form").style.display =
+          tab === "register" ? "" : "none";
+        document.getElementById("auth-error").style.display = "none";
+      }
+
+      async function doLogin() {
+        const email = document.getElementById("login-email").value.trim();
+        const password = document.getElementById("login-password").value;
+        const btn = document.getElementById("login-btn-text");
+        if (!email || !password)
+          return showAuthError("Please fill in all fields.");
+        btn.textContent = "Signing in...";
+        const { ok, data } = await api("POST", "/api/auth/login", {
+          email,
+          password,
+        });
+        btn.textContent = "Sign In →";
+        if (!ok) return showAuthError(data.message || "Login failed.");
+        setAuth(data.data.access_token, data.data.user);
+      }
+
+      async function doRegister() {
+        const name = document.getElementById("reg-name").value.trim();
+        const email = document.getElementById("reg-email").value.trim();
+        const password = document.getElementById("reg-password").value;
+        const role = document.getElementById("reg-role").value;
+        if (!name || !email || !password)
+          return showAuthError("Please fill all fields.");
+        const { ok, data } = await api("POST", "/api/auth/register", {
+          name,
+          email,
+          password,
+          role,
+        });
+        if (!ok) return showAuthError(data.message || "Registration failed.");
+        toast("Account created! Signing you in…", "success");
+        // auto login
+        const res2 = await api("POST", "/api/auth/login", { email, password });
+        if (res2.ok) setAuth(res2.data.data.access_token, res2.data.data.user);
+      }
+
+      function showAuthError(msg) {
+        const el = document.getElementById("auth-error");
+        el.textContent = msg;
+        el.style.display = "block";
+      }
+
+      function setAuth(tok, user) {
+        token = tok;
+        currentUser = user;
+        localStorage.setItem("ph_token", tok);
+        localStorage.setItem("ph_user", JSON.stringify(user));
+        launchApp();
+      }
+
+      function doLogout() {
+        token = null;
+        currentUser = null;
+        localStorage.removeItem("ph_token");
+        localStorage.removeItem("ph_user");
+        document.getElementById("app-screen").style.display = "none";
+        document.getElementById("auth-screen").style.display = "flex";
+      }
+
+      // ─── APP LAUNCH ───────────────────────────────────────────────────────────────
+      function launchApp() {
+        document.getElementById("auth-screen").style.display = "none";
+        document.getElementById("app-screen").style.display = "flex";
+        document.getElementById("sidebar-name").textContent = currentUser.name;
+        document.getElementById("sidebar-role").textContent = currentUser.role;
+        document.getElementById("sidebar-avatar").textContent =
+          currentUser.name[0].toUpperCase();
+        if (currentUser.role === "admin")
+          document.getElementById("admin-nav").style.display = "";
+        showView("dashboard");
+      }
+
+      // Check if already logged in
+      if (token && currentUser) launchApp();
+
+      // ─── NAVIGATION ───────────────────────────────────────────────────────────────
+      function showView(id) {
+        document
+          .querySelectorAll(".view")
+          .forEach((v) => v.classList.remove("active"));
+        document.getElementById("view-" + id).classList.add("active");
+        document
+          .querySelectorAll(".nav-item")
+          .forEach((n) => n.classList.remove("active"));
+        const targets = {
+          dashboard: 0,
+          "all-potholes": 1,
+          "my-reports": 2,
+          nearby: 3,
+          "admin-panel": 4,
+        };
+        const items = document.querySelectorAll(".nav-item");
+        if (targets[id] !== undefined && items[targets[id]])
+          items[targets[id]].classList.add("active");
+
+        if (id === "dashboard") loadDashboard();
+        else if (id === "all-potholes") {
+          pages.all = 1;
+          loadAllPotholes();
+        } else if (id === "my-reports") {
+          pages.my = 1;
+          loadMyPotholes();
+        } else if (id === "admin-panel") {
+          pages.admin = 1;
+          loadAdminPotholes();
+        }
+      }
+
+      // ─── PRIORITY UI ──────────────────────────────────────────────────────────────
+      function selectPriority(p) {
+        currentPriority = p;
+        document.querySelectorAll(".priority-opt").forEach((el) => {
+          el.classList.toggle("selected", +el.dataset.p === p);
+        });
+      }
+
+      // ─── RENDER TABLE ─────────────────────────────────────────────────────────────
+      function renderTable(potholes, isAdmin = false, isOwn = false) {
+        if (!potholes.length)
+          return `<div class="empty"><div class="emoji">🕳️</div><h3>No potholes found</h3><p>Nothing matches your filters.</p></div>`;
+        const rows = potholes
+          .map((p) => {
+            const dots = Array.from(
+              { length: 5 },
+              (_, i) =>
+                `<div class="dot filled p${p.priority}" style="${i >= p.priority ? "background:var(--border)" : ""}"></div>`,
+            ).join("");
+            const actions = buildActions(p, isAdmin, isOwn);
+            return `<tr>
+      <td style="font-weight:600;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.name}</td>
+      <td><span class="badge-status ${p.status}">${p.status}</span></td>
+      <td><div class="priority-dots">${Array.from({ length: 5 }, (_, i) => `<div class="dot${i < p.priority ? " filled p" + p.priority : ""}"></div>`).join("")}</div></td>
+      <td class="location-cell">${p.location.latitude.toFixed(4)}, ${p.location.longitude.toFixed(4)}</td>
+      <td style="color:var(--text-dim)">${new Date(p.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</td>
+      <td><div class="action-btns">${actions}</div></td>
+    </tr>`;
+          })
+          .join("");
+        return `<table>
+    <thead><tr><th>Name</th><th>Status</th><th>Priority</th><th>Location</th><th>Date</th><th>Actions</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+      }
+
+      function buildActions(p, isAdmin, isOwn) {
+        let btns = `<button class="btn btn-ghost btn-sm" onclick="openDetail('${p.id}')">View</button>`;
+        const canEdit = isOwn || (currentUser && currentUser.role === "admin");
+        if (canEdit && !isAdmin)
+          btns += `<button class="btn btn-danger btn-sm" onclick="deletePothole('${p.id}')">Delete</button>`;
+        if (isAdmin) {
+          btns += `<button class="btn btn-ghost btn-sm" onclick="openStatusModal('${p.id}','${p.status}')">Status</button>`;
+          btns += `<button class="btn btn-ghost btn-sm" onclick="openPriorityModal('${p.id}',${p.priority})">Priority</button>`;
+          btns += `<button class="btn btn-danger btn-sm" onclick="adminDelete('${p.id}')">Delete</button>`;
+        }
+        return btns;
+      }
+
+      function renderPagination(total, page, limit, callback, containerId) {
+        const pages = Math.ceil(total / limit);
+        const el = document.getElementById(containerId);
+        if (pages <= 1) {
+          el.innerHTML = "";
+          return;
+        }
+        const start = (page - 1) * limit + 1,
+          end = Math.min(page * limit, total);
+        let btns = `<button class="page-btn" onclick="${callback}(${page - 1})" ${page <= 1 ? "disabled" : ""}>←</button>`;
+        for (let i = 1; i <= pages; i++) {
+          if (Math.abs(i - page) <= 2 || i === 1 || i === pages)
+            btns += `<button class="page-btn ${i === page ? "active" : ""}" onclick="${callback}(${i})">${i}</button>`;
+          else if (Math.abs(i - page) === 3)
+            btns += `<span style="color:var(--text-muted);padding:0 4px">…</span>`;
+        }
+        btns += `<button class="page-btn" onclick="${callback}(${page + 1})" ${page >= pages ? "disabled" : ""}>→</button>`;
+        el.innerHTML = `<div class="pagination">
+    <div class="pagination-info">Showing ${start}–${end} of ${total}</div>
+    <div class="pagination-btns">${btns}</div>
+  </div>`;
+      }
+
+      // ─── DASHBOARD ────────────────────────────────────────────────────────────────
+      async function loadDashboard() {
+        const wrap = document.getElementById("dashboard-table-wrap");
+        wrap.innerHTML =
+          '<div class="loading"><div class="spinner"></div> Loading...</div>';
+        const [all, pending, inprogress, completed] = await Promise.all([
+          api("GET", "/api/potholes/?limit=1"),
+          api("GET", "/api/potholes/?status=pending&limit=1"),
+          api("GET", "/api/potholes/?status=inprogress&limit=1"),
+          api("GET", "/api/potholes/?status=completed&limit=1"),
+        ]);
+        document.getElementById("stat-total").textContent = all.ok
+          ? (all.data.pagination?.total ?? "—")
+          : "—";
+        document.getElementById("stat-pending").textContent = pending.ok
+          ? (pending.data.pagination?.total ?? "—")
+          : "—";
+        document.getElementById("stat-progress").textContent = inprogress.ok
+          ? (inprogress.data.pagination?.total ?? "—")
+          : "—";
+        document.getElementById("stat-done").textContent = completed.ok
+          ? (completed.data.pagination?.total ?? "—")
+          : "—";
+
+        const recent = await api("GET", "/api/potholes/?limit=8");
+        if (!recent.ok) {
+          wrap.innerHTML = `<div class="empty"><div class="emoji">⚠️</div><h3>Could not load</h3><p>${recent.data.message || "API error"}</p></div>`;
+          return;
+        }
+        wrap.innerHTML = renderTable(recent.data.data || []);
+      }
+
+      // ─── ALL POTHOLES ─────────────────────────────────────────────────────────────
+      async function loadAllPotholes(page = 1) {
+        pages.all = page;
+        const wrap = document.getElementById("all-table-wrap");
+        wrap.innerHTML =
+          '<div class="loading"><div class="spinner"></div> Loading...</div>';
+        const status = document.getElementById("filter-status").value;
+        const priority = document.getElementById("filter-priority").value;
+        let q = `/api/potholes/?page=${page}&limit=10`;
+        if (status) q += `&status=${status}`;
+        if (priority) q += `&priority=${priority}`;
+        const { ok, data } = await api("GET", q);
+        if (!ok) {
+          wrap.innerHTML = `<div class="empty"><div class="emoji">⚠️</div><h3>Error</h3><p>${data.message}</p></div>`;
+          return;
+        }
+        wrap.innerHTML = renderTable(data.data || []);
+        renderPagination(
+          data.pagination.total,
+          page,
+          10,
+          "loadAllPotholes",
+          "all-pagination",
+        );
+      }
+
+      // ─── MY POTHOLES ──────────────────────────────────────────────────────────────
+      async function loadMyPotholes(page = 1) {
+        pages.my = page;
+        const wrap = document.getElementById("my-table-wrap");
+        wrap.innerHTML =
+          '<div class="loading"><div class="spinner"></div> Loading...</div>';
+        const { ok, data } = await api(
+          "GET",
+          `/api/potholes/my?page=${page}&limit=10`,
+        );
+        if (!ok) {
+          wrap.innerHTML = `<div class="empty"><div class="emoji">⚠️</div><h3>Error</h3><p>${data.message}</p></div>`;
+          return;
+        }
+        wrap.innerHTML = renderTable(data.data || [], false, true);
+        renderPagination(
+          data.pagination.total,
+          page,
+          10,
+          "loadMyPotholes",
+          "my-pagination",
+        );
+      }
+
+      // ─── NEARBY ───────────────────────────────────────────────────────────────────
+      async function loadNearby() {
+        const lat = document.getElementById("nb-lat").value;
+        const lng = document.getElementById("nb-lng").value;
+        const radius = document.getElementById("nb-radius").value || 5;
+        if (!lat || !lng) {
+          toast("Enter latitude and longitude.", "error");
+          return;
+        }
+        const wrap = document.getElementById("nearby-table-wrap");
+        wrap.innerHTML =
+          '<div class="loading"><div class="spinner"></div> Searching...</div>';
+        const { ok, data } = await api(
+          "GET",
+          `/api/potholes/nearby?latitude=${lat}&longitude=${lng}&radius_km=${radius}`,
+        );
+        if (!ok) {
+          wrap.innerHTML = `<div class="empty"><div class="emoji">⚠️</div><h3>Error</h3><p>${data.message}</p></div>`;
+          return;
+        }
+        if (!data.data?.length) {
+          wrap.innerHTML = `<div class="empty"><div class="emoji">✅</div><h3>All clear!</h3><p>No potholes found within ${radius}km of this location.</p></div>`;
+          return;
+        }
+        wrap.innerHTML = renderTable(data.data);
+        toast(`Found ${data.data.length} pothole(s) nearby.`, "info");
+      }
+
+      function useMyLocation() {
+        if (!navigator.geolocation) {
+          toast("Geolocation not supported.", "error");
+          return;
+        }
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            document.getElementById("nb-lat").value =
+              pos.coords.latitude.toFixed(6);
+            document.getElementById("nb-lng").value =
+              pos.coords.longitude.toFixed(6);
+            toast("Location acquired!", "success");
+          },
+          () => toast("Could not get location.", "error"),
+        );
+      }
+
+      // ─── ADMIN ────────────────────────────────────────────────────────────────────
+      async function loadAdminPotholes(page = 1) {
+        pages.admin = page;
+        const wrap = document.getElementById("admin-table-wrap");
+        wrap.innerHTML =
+          '<div class="loading"><div class="spinner"></div> Loading...</div>';
+        const status = document.getElementById("admin-filter-status").value;
+        const priority = document.getElementById("admin-filter-priority").value;
+        let q = `/api/admin/potholes?page=${page}&limit=10`;
+        if (status) q += `&status=${status}`;
+        if (priority) q += `&priority=${priority}`;
+        const { ok, data } = await api("GET", q);
+        if (!ok) {
+          wrap.innerHTML = `<div class="empty"><div class="emoji">🛡️</div><h3>Admin Access Required</h3><p>${data.message}</p></div>`;
+          return;
+        }
+        wrap.innerHTML = renderTable(data.data || [], true);
+        renderPagination(
+          data.pagination.total,
+          page,
+          10,
+          "loadAdminPotholes",
+          "admin-pagination",
+        );
+      }
+
+      // ─── DETAIL ───────────────────────────────────────────────────────────────────
+      async function openDetail(id) {
+        openModal("detail-modal");
+        document.getElementById("detail-body").innerHTML =
+          '<div class="loading"><div class="spinner"></div> Loading...</div>';
+        const { ok, data } = await api("GET", `/api/potholes/${id}`);
+        if (!ok) {
+          document.getElementById("detail-body").innerHTML =
+            `<p style="color:var(--danger)">${data.message}</p>`;
+          return;
+        }
+        const p = data.data;
+        const canDelete =
+          currentUser &&
+          (p.user_id === currentUser.id || currentUser.role === "admin");
+        document.getElementById("detail-body").innerHTML = `
+    ${p.photo_url ? `<img src="${p.photo_url}" class="photo-preview" onerror="this.style.display='none'" alt="Photo">` : ""}
+    <div class="detail-grid">
+      <div class="detail-item" style="grid-column:1/-1"><div class="dl">Name</div><div class="dv" style="font-size:16px;font-family:var(--font-head)">${p.name}</div></div>
+      <div class="detail-item"><div class="dl">Status</div><div class="dv"><span class="badge-status ${p.status}">${p.status}</span></div></div>
+      <div class="detail-item"><div class="dl">Priority</div><div class="dv">${"★".repeat(p.priority)}${"☆".repeat(5 - p.priority)} (${p.priority}/5)</div></div>
+      <div class="detail-item"><div class="dl">Latitude</div><div class="dv" style="font-family:var(--font-mono)">${p.location.latitude}</div></div>
+      <div class="detail-item"><div class="dl">Longitude</div><div class="dv" style="font-family:var(--font-mono)">${p.location.longitude}</div></div>
+      <div class="detail-item"><div class="dl">Reported On</div><div class="dv">${new Date(p.created_at).toLocaleString("en-IN")}</div></div>
+      <div class="detail-item"><div class="dl">Pothole ID</div><div class="dv" style="font-family:var(--font-mono);font-size:11px;color:var(--text-dim)">${p.id}</div></div>
+      ${p.comment ? `<div class="detail-item" style="grid-column:1/-1"><div class="dl">Comment</div><div class="dv" style="color:var(--text-dim)">${p.comment}</div></div>` : ""}
+    </div>
+  `;
+        document.getElementById("detail-footer").innerHTML = canDelete
+          ? `<button class="btn btn-ghost" onclick="closeModal('detail-modal')">Close</button><button class="btn btn-danger" onclick="deletePothole('${p.id}',true)">Delete Report</button>`
+          : `<button class="btn btn-ghost" onclick="closeModal('detail-modal')">Close</button>`;
+      }
+
+      // ─── REPORT ───────────────────────────────────────────────────────────────────
+      function openReportModal() {
+        document.getElementById("rp-name").value = "";
+        document.getElementById("rp-lat").value = "";
+        document.getElementById("rp-lng").value = "";
+        document.getElementById("rp-photo").value = "";
+        document.getElementById("rp-comment").value = "";
+        document.getElementById("report-error").style.display = "none";
+        selectPriority(3);
+        openModal("report-modal");
+      }
+
+      async function submitReport() {
+        const name = document.getElementById("rp-name").value.trim();
+        const lat = parseFloat(document.getElementById("rp-lat").value);
+        const lng = parseFloat(document.getElementById("rp-lng").value);
+        const photo_url = document.getElementById("rp-photo").value.trim();
+        const comment = document.getElementById("rp-comment").value.trim();
+        const errEl = document.getElementById("report-error");
+        errEl.style.display = "none";
+        if (!name) {
+          errEl.textContent = "Name is required.";
+          errEl.style.display = "block";
+          return;
+        }
+        if (isNaN(lat) || isNaN(lng)) {
+          errEl.textContent = "Valid latitude and longitude are required.";
+          errEl.style.display = "block";
+          return;
+        }
+
+        const btn = document.getElementById("report-submit-btn");
+        btn.disabled = true;
+        btn.textContent = "Submitting...";
+        const body = {
+          name,
+          latitude: lat,
+          longitude: lng,
+          priority: currentPriority,
+        };
+        if (photo_url) body.photo_url = photo_url;
+        if (comment) body.comment = comment;
+        const { ok, data } = await api("POST", "/api/potholes/", body);
+        btn.disabled = false;
+        btn.textContent = "Submit Report";
+        if (!ok) {
+          errEl.textContent = data.message || "Failed to submit.";
+          errEl.style.display = "block";
+          return;
+        }
+        closeModal("report-modal");
+        toast("Pothole reported successfully! 🕳️", "success");
+        loadDashboard();
+      }
+
+      // ─── DELETE ───────────────────────────────────────────────────────────────────
+      async function deletePothole(id, fromDetail = false) {
+        if (!confirm("Delete this pothole report?")) return;
+        const { ok, data } = await api("DELETE", `/api/potholes/${id}`);
+        if (!ok) {
+          toast(data.message || "Delete failed.", "error");
+          return;
+        }
+        toast("Pothole report deleted.", "success");
+        if (fromDetail) closeModal("detail-modal");
+        loadDashboard();
+        if (
+          document
+            .getElementById("view-my-reports")
+            .classList.contains("active")
+        )
+          loadMyPotholes(pages.my);
+        if (
+          document
+            .getElementById("view-all-potholes")
+            .classList.contains("active")
+        )
+          loadAllPotholes(pages.all);
+      }
+
+      async function adminDelete(id) {
+        if (!confirm("Permanently delete this report? This cannot be undone."))
+          return;
+        const { ok, data } = await api("DELETE", `/api/admin/potholes/${id}`);
+        if (!ok) {
+          toast(data.message || "Delete failed.", "error");
+          return;
+        }
+        toast("Pothole permanently deleted.", "success");
+        loadAdminPotholes(pages.admin);
+      }
+
+      // ─── ADMIN STATUS / PRIORITY ──────────────────────────────────────────────────
+      function openStatusModal(id, currentStatus) {
+        activePotholeId = id;
+        document.getElementById("new-status").value = currentStatus;
+        openModal("status-modal");
+      }
+      async function submitStatusUpdate() {
+        const status = document.getElementById("new-status").value;
+        const { ok, data } = await api(
+          "PATCH",
+          `/api/admin/potholes/${activePotholeId}/status`,
+          { status },
+        );
+        if (!ok) {
+          toast(data.message || "Update failed.", "error");
+          return;
+        }
+        toast(`Status updated to "${status}".`, "success");
+        closeModal("status-modal");
+        loadAdminPotholes(pages.admin);
+      }
+
+      function openPriorityModal(id, currentPriority) {
+        activePotholeId = id;
+        document.getElementById("new-priority").value = currentPriority;
+        openModal("priority-modal");
+      }
+      async function submitPriorityUpdate() {
+        const priority = parseInt(
+          document.getElementById("new-priority").value,
+        );
+        const { ok, data } = await api(
+          "PATCH",
+          `/api/admin/potholes/${activePotholeId}/priority`,
+          { priority },
+        );
+        if (!ok) {
+          toast(data.message || "Update failed.", "error");
+          return;
+        }
+        toast(`Priority updated to ${priority}.`, "success");
+        closeModal("priority-modal");
+        loadAdminPotholes(pages.admin);
+      }
+
+      // ─── CLOSE MODAL ON BACKDROP ──────────────────────────────────────────────────
+      document.querySelectorAll(".modal-overlay").forEach((overlay) => {
+        overlay.addEventListener("click", (e) => {
+          if (e.target === overlay) overlay.classList.remove("open");
+        });
+      });
+    </script>
+  </body>
+</html>
